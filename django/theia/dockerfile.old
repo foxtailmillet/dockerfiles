@@ -1,0 +1,85 @@
+# sudo docker build . -t theia_u1804
+# sudo docker run -d --rm --name theia -p 3000:3000 -v "$(pwd)/work:/home/projects" theia_u1804
+From ubuntu:18.04
+ARG user_name="user01"
+ARG user_id="1000"
+ARG user_password="pass"
+
+ARG node_version="10.15.3"
+ARG yarn_version="1.13.0"
+ENV DEBIAN_FRONTEND noninteractive
+
+# add package
+RUN apt-get  update
+RUN apt-get  install -y apt-utils
+RUN apt-get  install -y aptitude
+RUN aptitude install -y ssh
+RUN apt-get  install -y vim
+RUN update-alternatives --set editor /usr/bin/vim.basic
+RUN apt-get  install -y sudo
+RUN apt-get  install -y curl xz-utils wget gpg
+
+RUN apt-get install -y python build-essential
+RUN apt-get install -y git
+
+#RUN apt-get install language-pack-ja
+# RUN update-locale LANG=ja_JP.UTF-8
+
+# install node
+RUN apt-get install -y nodejs npm
+RUN nodejs --version
+RUN npm cache clean
+RUN npm install n -g
+RUN n ${node_version}
+RUN ln -sf /usr/local/bin/node /usr/bin/node
+RUN apt-get purge -y nodejs npm
+
+# confirm
+RUN node -v
+
+# yarn install
+RUN set -ex \
+    && for key in \
+    6A010C5166006599AA17F08146C2130DFD2497F5 \
+    ; do \
+    gpg --batch --keyserver ipv4.pool.sks-keyservers.net --recv-keys "$key" || \
+    gpg --batch --keyserver pool.sks-keyservers.net --recv-keys "$key" || \
+    gpg --batch --keyserver pgp.mit.edu --recv-keys "$key" || \
+    gpg --batch --keyserver keyserver.pgp.com --recv-keys "$key" || \
+    gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
+    done \
+    && curl -fSLO --compressed "https://yarnpkg.com/downloads/${yarn_version}/yarn-v${yarn_version}.tar.gz" \
+    && curl -fSLO --compressed "https://yarnpkg.com/downloads/${yarn_version}/yarn-v${yarn_version}.tar.gz.asc" \
+    && gpg --batch --verify yarn-v${yarn_version}.tar.gz.asc yarn-v${yarn_version}.tar.gz \
+    && mkdir -p /opt/yarn \
+    && tar -xzf yarn-v${yarn_version}.tar.gz -C /opt/yarn --strip-components=1 \
+    && ln -s /opt/yarn/bin/yarn /usr/local/bin/yarn \
+    && ln -s /opt/yarn/bin/yarn /usr/local/bin/yarnpkg \
+    && rm yarn-v${yarn_version}.tar.gz.asc yarn-v${yarn_version}.tar.gz
+
+# add user
+RUN adduser ${user_name} -u ${user_id} --disabled-login --gecos ''
+
+RUN echo "${user_name}:${user_password}" |chpasswd
+RUN echo "${user_name} ALL=(ALL) NOPASSWD: ALL" | EDITOR='tee -a' visudo >/dev/null
+
+USER ${user_name}
+
+RUN sudo mkdir -p /opt/theia \
+    && sudo chown ${user_name}:${user_name} /opt/theia
+
+ARG version=latest
+WORKDIR /opt/theia
+
+ADD $version.package.json ./package.json
+# using "NODE_OPTIONS=..." to avoid out-of-memory problem in CI
+RUN yarn --cache-folder ./ycache && rm -rf ./ycache && \
+    NODE_OPTIONS="--max_old_space_size=4096" yarn theia build
+
+EXPOSE 3000
+
+ENV SHELL /bin/bash
+
+VOLUME ["/home/projects"]
+
+ENTRYPOINT [ "yarn", "theia", "start", "/home/projects", "--hostname=0.0.0.0" ]

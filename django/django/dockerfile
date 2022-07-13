@@ -1,0 +1,47 @@
+# sudo docker build . -t django_app
+# sudo docker run -d --rm --name django_app -p 8000:8000 -v "$(pwd)/work:/home/projects" django_app
+From python:3.7.4-buster
+ARG user_name="user01"
+ARG user_id="1000"
+ARG user_password="pass"
+ENV DEBIAN_FRONTEND noninteractive
+
+# add package
+RUN apt-get  update
+RUN apt-get  install -y apt-utils
+RUN apt-get  install -y aptitude
+#RUN aptitude install -y ssh
+RUN apt-get  install -y vim
+RUN update-alternatives --set editor /usr/bin/vim.basic
+RUN apt-get  install -y sudo
+
+# locale ja_JP.UTF-8
+#RUN apt-get install -y locales
+#RUN sed -i 's/# ja_JP.UTF-8 UTF-8/ ja_JP.UTF-8 UTF-8/' /etc/locale.gen
+#RUN locale-gen
+
+# initialize
+RUN pip install Django
+
+# version check
+RUN pip freeze \
+    && python -c "from __future__ import print_function; import sys; print(sys.version_info)"
+
+# add user
+RUN adduser ${user_name} -u ${user_id} --disabled-login --gecos ''
+
+RUN echo "${user_name}:${user_password}" |chpasswd
+RUN echo "${user_name} ALL=(ALL) NOPASSWD: ALL" | EDITOR='tee -a' visudo >/dev/null
+
+USER ${user_name}
+
+VOLUME ["/home/projects"]
+WORKDIR /home/projects
+
+ADD django_start.sh /home/django_start.sh
+
+RUN sudo chown ${user_name}:${user_name} /home/django_start.sh
+
+EXPOSE 8000
+
+ENTRYPOINT [ "/bin/bash", "/home/django_start.sh" ]

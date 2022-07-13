@@ -1,0 +1,24 @@
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN echo "deb http://security.ubuntu.com/ubuntu bionic-security main" >> /etc/apt/sources.list.d/libsslold.list
+RUN apt-get update && apt-cache policy libssl1.0-dev
+RUN apt-get -y install libssl1.0-dev
+
+RUN apt-get -y install rbenv
+
+RUN apt-get update
+RUN apt-get install -y -V wget
+
+RUN wget https://packages.groonga.org/debian/groonga-apt-source-latest-buster.deb
+RUN apt-get install -y -V ./groonga-apt-source-latest-buster.deb
+RUN apt-get update
+
+RUN apt-get install -V -y libgroonga-dev
+RUN apt-get install -y ruby-dev
+
+RUN gem install milkode
+
+EXPOSE 9292
+CMD milk web --host=0.0.0.0 --no-browser

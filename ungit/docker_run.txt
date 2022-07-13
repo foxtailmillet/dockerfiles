@@ -1,0 +1,2 @@
+docker build . -t ungit_build
+docker run -d --name ungit01 -v /home/temp/ungit:/home/temp/ungit -p 49999:9999 --restart=always ungit_build

@@ -1,0 +1,18 @@
+from node:12-slim
+
+ENV VERSION 1.5.9
+
+RUN apt-get update && apt-get install -y git ssh net-tools vim --no-install-recommends
+RUN npm install -g ungit@${VERSION}
+
+RUN mkdir /data
+RUN mkdir /home/node/.ssh
+
+ADD ungitrc /home/node/.ungitrc
+
+WORKDIR /data
+
+EXPOSE 9999
+USER node
+
+CMD ["ungit"]

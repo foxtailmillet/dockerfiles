@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: ./django
+      dockerfile: dockerfile
+    container_name: django_app
+    ports:
+      - "8001:8000"
+    volumes:
+      - "/home/projects:/home/projects" 
+    environment:
+      TZ: Asia/Tokyo
+  editor:
+    build: 
+      context: ./theia
+      dockerfile: dockerfile
+    container_name: django_theia
+    ports:
+      - "2000:3000"
+      - "2100:3100"
+      - "2200:3200"
+    volumes:
+      - "/home/projects:/home/projects"
+      - "/:/home/host_root"
+    environment:
+      TZ: Asia/Tokyo
+  sql_editor:
+    build: 
+      context: ./superset
+      dockerfile: dockerfile
+    container_name: django_superset
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/home/projects:/home/projects" 
+    environment:
+      TZ: Asia/Tokyo
+  reverse_proxy:
+    build:
+      context: ./nginx
+      dockerfile: dockerfile
+    container_name: django_nginx
+    ports:
+      - "1080:80"
+      - "1443:443"
+    volumes:
+      - "/home/projects:/home/projects"
+    environment:
+      TZ: Asia/Tokyo

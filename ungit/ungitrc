@@ -1,0 +1,7 @@
+{
+  "port":9999,
+  "bugtracking":false,
+  "autoFetch":false,
+  "ungitBindIp":"0.0.0.0",
+  "launchBrowser":false
+}

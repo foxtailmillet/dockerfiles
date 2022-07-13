@@ -1,0 +1,8 @@
+docker build . -t milkode_build
+docker run -d --name milkode01 -p 49292:9292 -v /home/temp/milkode:/home/temp/milkode --restart=always milkode_build
+
+#
+$ docker exec -it milkode /bin/bash
+  milk init
+
+docker restart milkode01

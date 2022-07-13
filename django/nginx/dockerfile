@@ -1,0 +1,16 @@
+from nginx
+ENV DEBIAN_FRONTEND noninteractive
+
+# update package info
+RUN apt-get  update
+
+# locale ja_JP.UTF-8
+#RUN apt-get install -y locales
+#RUN sed -i 's/# ja_JP.UTF-8 UTF-8/ ja_JP.UTF-8 UTF-8/' /etc/locale.gen
+#RUN locale-gen
+
+# copy setting
+ADD nginx_start.sh /home/nginx_start.sh
+ADD default.conf   /home/default.conf.org
+
+CMD [ "/bin/bash", "/home/nginx_start.sh" ]
